@@ -31,15 +31,17 @@ mux:
   enabled: true
   concurrency: 8
   idle_timeout: 60
-websocket:
-  path: /video
-  host: test.com
 router:
   enabled: true
   block:
     - 'geoip:private'
   geoip: /root/trojan/geoip.dat
   geosite: /root/trojan/geosite.dat
+websocket:
+  enabled: true
+  path: /video
+  host: test.com
+
 EOF
 
 cat > /etc/systemd/system/trojan-go.service <<EOF
