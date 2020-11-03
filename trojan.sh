@@ -1,23 +1,28 @@
 #!/bin/bash
 apt update
-apt install unzip wget curl
+apt install unzip curl
 
 # 安装Caddy
 wget https://github.com/caddyserver/caddy/releases/download/v2.2.1/caddy_2.2.1_linux_amd64.deb
 dpkg -i caddy_2.2.1_linux_amd64.deb && rm caddy_2.2.1_linux_amd64.deb
 
-cd /etc/caddy/
-caddy stop && caddy start
+cd /etc/caddy/ && cat > Caddyfile <<EOF
+:80
+reverse_proxy https://mp3.zing.vn {
+    header_up Host {http.reverse_proxy.upstream.hostport}
+}
+EOF
+caddy stop && caddy start 
 
-cd
+cd ~
 
 # 安装Trojan
 wget https://github.com/trojan-gfw/trojan/releases/download/v1.16.0/trojan-1.16.0-linux-amd64.tar.xz
 tar vxf trojan-1.16.0-linux-amd64.tar.xz  && rm trojan-1.16.0-linux-amd64.tar.xz
-cd trojan && rm CONTRIBUTORS.md LICENSE README.md config.json
+cd trojan && rm CONTRIBUTORS.md LICENSE README.md
 
 
-cat > server.json <<EOF
+cat > config.json <<EOF
 {
     "run_type": "server",
     "local_addr": "0.0.0.0",
@@ -71,7 +76,7 @@ Type=simple
 StandardError=journal
 User=root
 AmbientCapabilities=CAP_NET_BIND_SERVICE
-ExecStart=/root/trojan/trojan -c /root/trojan/server.json
+ExecStart=/root/trojan/trojan -c /root/trojan/config.json
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=on-failure
 RestartSec=1s
@@ -80,5 +85,5 @@ RestartSec=1s
 WantedBy=multi-user.target
 EOF
 
-cd 
+
 mkdir ssl && cd ssl && touch ca.crt ca.key
