@@ -23,7 +23,7 @@ domain_ip=$(ping "${domain}" -c 1 | sed '1{s/[^(]*(//;s/).*//;q}')
 echo "${Green}域名dns解析IP${Font}: ${domain_ip}"
 
 if [ $localh_ip==$domain_ip ] ; then
-	echo "${Green}域名解析成功!{$Font}"
+	echo "${Green}域名解析成功! ${Font}"
 else
 	echo "{$Red}域名解析失败.是否继续安装(y|N)${Font}" && read -r install
 	case $install in
@@ -119,6 +119,7 @@ RestartSec=1s
 WantedBy=multi-user.target
 EOF
 
+systemctl daemon-reload
 systemctl start trojan
 systemctl enable trojan
 
@@ -142,8 +143,10 @@ EOF
 caddy stop && caddy start && cd ~
 
 echo "${Blue}服务器地址${Font}: ${Red}${domain}${Font}"
-echo "${Blue}端口${Font}: ${Red}443${Font}"
-echo "${Blue}密码${Font}: ${Red}${password}${Font}"
+echo "${Blue}端　　　口${Font}: ${Red}443${Font}"
+echo "${Blue}密　　　码${Font}: ${Red}${password}${Font}"
 echo "${Blue}传输层加密${Font}: ${Red}tls${Font}"
 
-systemctl status trojan
+echo "${Green}查看状态${Font}: ${Blue}systemctl status trojan${Font}"
+echo "${Green}停　　止${Font}: ${Blue}systemctl stop trojan${Font}"
+echo "${Green}启　　动${Font}: ${Blue}systemctl restart trojan${Font}"
