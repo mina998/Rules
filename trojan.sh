@@ -1,4 +1,8 @@
 #!/bin/sh
+Green="\033[32m"
+Blue="\033[36m"
+Red="\033[31m"
+Font="\033[0m"
 
 # 安装Socat
 if [ ! -x /usr/bin/socat ] ; then 
@@ -9,38 +13,36 @@ curl https://get.acme.sh | sh
 # 设置权限
 source ~/.bashrc
 
-read -p "请输入域名(ss.demo.com):" domain
+read -p "${Blue}请输入域名(ss.demo.com)${Font}:" domain
 
 localh_ip=$(curl https://api-ipv4.ip.sb/ip)
 domain_ip=$(ping "${domain}" -c 1 | sed '1{s/[^(]*(//;s/).*//;q}')
 
-echo "域名dns解析IP：${domain_ip}"
-echo 1. $localh_ip
-echo 2. $domain_ip
+echo -e "${Green}域名dns解析IP${Font}: ${domain_ip}"
 
 if [ $localh_ip==$domain_ip ] ; then
-	echo "域名解析成功!"
+	echo -e "${Green}域名解析成功!{$Font}"
 else
-	echo "域名解析失败.是否继续安装(y|N)" && read -r install
+	echo -e "{$Red}域名解析失败.是否继续安装(y|N)${Font}" && read -r install
 	case $install in
 		[yY][eE][sS] | [yY])
             sleep 2
 			;;
 		*)
-			echo "安装终止"
+			echo -e "${Blue}安装终止${Font}"
             exit 2
 			;;	
 	esac
 fi
 
-echo "开始申请证书."
+echo -e "${Blue}开始申请证书.${Font}"
 ~/.acme.sh/acme.sh --issue -d "${domain}" --standalone -k ec-256 --force
 #
 mkdir ~/ssl
 # 安装证书
 ~/.acme.sh/acme.sh --installcert -d "${domain}" --fullchainpath ~/ssl/ca.crt --keypath ~/ssl/ca.key --ecc --force
 
-echo "证书安装中. 请稍等..."
+echo -e "${Blue}证书安装中. 请稍等...${Font}"
 sleep 3
 
 # 下载trojan-gfw
@@ -50,7 +52,7 @@ tar vxf trojan-1.16.0-linux-amd64.tar.xz  && rm trojan-1.16.0-linux-amd64.tar.xz
 # 删除多余文件
 cd trojan && rm CONTRIBUTORS.md LICENSE README.md
 
-read -p "请输入密码:" password
+read -p "${Blue}请输入密码:${Font}" password
 # 添加trojan配置文件
 cat > config.json <<EOF
 {
@@ -122,7 +124,7 @@ wget https://github.com/caddyserver/caddy/releases/download/v2.2.1/caddy_2.2.1_l
 dpkg -i caddy_2.2.1_linux_amd64.deb && rm caddy_2.2.1_linux_amd64.deb
 
 
-read -p "请输入伪装网站(https://www.qb5.tw):" web2
+read -p "${Blue}请输入伪装网站(https://www.qb5.tw)${Font}:" web2
 
 # 添加Caddy配置文件
 cd /etc/caddy/ && cat > Caddyfile <<EOF
@@ -134,9 +136,9 @@ EOF
 # 重启Caddy
 caddy stop && caddy start && cd ~
 
-echo 服务器地址: $domain
-echo 端口: 443
-echo 密码: $password
-echo 传输层加密: tls
+echo "${Blue}服务器地址${Font}: ${Red}${domain}${Font}"
+echo "${Blue}端口${Font}: ${Red}443${Font}"
+echo "${Blue}密码${Font}: ${Red}${password}${Font}"
+echo "${Blue}传输层加密${Font}: ${Red}tls${Font}"
 
 systemctl status trojan
