@@ -15,8 +15,10 @@ localh_ip=$(curl https://api-ipv4.ip.sb/ip)
 domain_ip=$(ping "${domain}" -c 1 | sed '1{s/[^(]*(//;s/).*//;q}')
 
 echo "域名dns解析IP：${domain_ip}"
+echo 1. $localh_ip
+echo 2. $domain_ip
 
-if [ $localh_ip == $domain_ip ] ; then
+if [ $localh_ip==$domain_ip ] ; then
 	echo "域名解析成功!"
 else
 	echo "域名解析失败.是否继续安装(y|N)" && read -r install
@@ -32,11 +34,14 @@ else
 fi
 
 echo "开始申请证书."
-acme.sh --issue -d "${domain}" --standalone -k ec-256 --force
+~/.acme.sh/acme.sh --issue -d "${domain}" --standalone -k ec-256 --force
 #
 mkdir ~/ssl
 # 安装证书
-acme.sh --installcert -d "${domain}" --fullchainpath ~/ssl/ca.crt --keypath ~/ssl/ca.key --ecc --force
+~/.acme.sh/acme.sh --installcert -d "${domain}" --fullchainpath ~/ssl/ca.crt --keypath ~/ssl/ca.key --ecc --force
+
+echo "证书安装中. 请稍等..."
+sleep 3
 
 # 下载trojan-gfw
 wget https://github.com/trojan-gfw/trojan/releases/download/v1.16.0/trojan-1.16.0-linux-amd64.tar.xz
