@@ -129,4 +129,9 @@ EOF
 # 重启Caddy
 caddy stop && caddy start && cd ~
 
+echo 服务器地址: $domain
+echo 端口: 443
+echo 密码: $password
+echo 传输层加密: tls
+
 systemctl status trojan
