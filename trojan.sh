@@ -18,31 +18,31 @@ read -p "${Blue}请输入域名(ss.demo.com)${Font}:" domain
 localh_ip=$(curl https://api-ipv4.ip.sb/ip)
 domain_ip=$(ping "${domain}" -c 1 | sed '1{s/[^(]*(//;s/).*//;q}')
 
-echo -e "${Green}域名dns解析IP${Font}: ${domain_ip}"
+echo "${Green}域名dns解析IP${Font}: ${domain_ip}"
 
 if [ $localh_ip==$domain_ip ] ; then
-	echo -e "${Green}域名解析成功!{$Font}"
+	echo "${Green}域名解析成功!{$Font}"
 else
-	echo -e "{$Red}域名解析失败.是否继续安装(y|N)${Font}" && read -r install
+	echo "{$Red}域名解析失败.是否继续安装(y|N)${Font}" && read -r install
 	case $install in
 		[yY][eE][sS] | [yY])
             sleep 2
 			;;
 		*)
-			echo -e "${Blue}安装终止${Font}"
+			echo "${Red}安装终止${Font}"
             exit 2
 			;;	
 	esac
 fi
 
-echo -e "${Blue}开始申请证书.${Font}"
+echo "${Blue}开始申请证书.${Font}"
 ~/.acme.sh/acme.sh --issue -d "${domain}" --standalone -k ec-256 --force
 #
 mkdir ~/ssl
 # 安装证书
 ~/.acme.sh/acme.sh --installcert -d "${domain}" --fullchainpath ~/ssl/ca.crt --keypath ~/ssl/ca.key --ecc --force
 
-echo -e "${Blue}证书安装中. 请稍等...${Font}"
+echo "${Blue}证书安装中. 请稍等...${Font}"
 sleep 3
 
 # 下载trojan-gfw
@@ -52,7 +52,9 @@ tar vxf trojan-1.16.0-linux-amd64.tar.xz  && rm trojan-1.16.0-linux-amd64.tar.xz
 # 删除多余文件
 cd trojan && rm CONTRIBUTORS.md LICENSE README.md
 
-read -p "${Blue}请输入密码:${Font}" password
+echo $Blue
+read -p "请输入密码:" password
+echo $Font
 # 添加trojan配置文件
 cat > config.json <<EOF
 {
@@ -123,8 +125,9 @@ wget https://github.com/caddyserver/caddy/releases/download/v2.2.1/caddy_2.2.1_l
 # 安装Caddy
 dpkg -i caddy_2.2.1_linux_amd64.deb && rm caddy_2.2.1_linux_amd64.deb
 
-
-read -p "${Blue}请输入伪装网站(https://www.qb5.tw)${Font}:" web2
+echo ${Blue}
+read -p "请输入伪装网站(https://www.qb5.tw):" web2
+echo ${Font}
 
 # 添加Caddy配置文件
 cd /etc/caddy/ && cat > Caddyfile <<EOF
