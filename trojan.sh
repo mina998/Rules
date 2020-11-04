@@ -1,27 +1,52 @@
-#!/bin/bash
-apt update
-apt install unzip curl
+#!/bin/sh
 
-# 安装Caddy
-wget https://github.com/caddyserver/caddy/releases/download/v2.2.1/caddy_2.2.1_linux_amd64.deb
-dpkg -i caddy_2.2.1_linux_amd64.deb && rm caddy_2.2.1_linux_amd64.deb
+# 安装Socat
+if [ ! -x /usr/bin/socat ] ; then 
+	apt install socat
+fi
+# 安装并执行证书签发程序
+curl https://get.acme.sh | sh
+# 设置权限
+source ~/.bashrc
 
-cd /etc/caddy/ && cat > Caddyfile <<EOF
-:80
-reverse_proxy https://mp3.zing.vn {
-    header_up Host {http.reverse_proxy.upstream.hostport}
-}
-EOF
-caddy stop && caddy start 
+read -p "请输入域名(ss.demo.com):" domain
 
-cd ~
+localh_ip=$(curl https://api-ipv4.ip.sb/ip)
+domain_ip=$(ping "${domain}" -c 1 | sed '1{s/[^(]*(//;s/).*//;q}')
 
-# 安装Trojan
+echo "域名dns解析IP：${domain_ip}"
+
+if [ $localh_ip == $domain_ip ] ; then
+	echo "域名解析成功!"
+else
+	echo "域名解析失败.是否继续安装(y|N)" && read -r install
+	case $install in
+		[yY][eE][sS] | [yY])
+            sleep 2
+			;;
+		*)
+			echo "安装终止"
+            exit 2
+			;;	
+	esac
+fi
+
+echo "开始申请证书."
+acme.sh --issue -d "${domain}" --standalone -k ec-256 --force
+#
+mkdir ~/ssl
+# 安装证书
+acme.sh --installcert -d "${domain}" --fullchainpath ~/ssl/ca.crt --keypath ~/ssl/ca.key --ecc --force
+
+# 下载trojan-gfw
 wget https://github.com/trojan-gfw/trojan/releases/download/v1.16.0/trojan-1.16.0-linux-amd64.tar.xz
+# 解压缩
 tar vxf trojan-1.16.0-linux-amd64.tar.xz  && rm trojan-1.16.0-linux-amd64.tar.xz
+# 删除多余文件
 cd trojan && rm CONTRIBUTORS.md LICENSE README.md
 
-
+read -p "请输入密码:" password
+# 添加trojan配置文件
 cat > config.json <<EOF
 {
     "run_type": "server",
@@ -30,7 +55,7 @@ cat > config.json <<EOF
     "remote_addr": "127.0.0.1",
     "remote_port": 80,
     "password": [
-        "463888"
+        "${password}"
     ],
     "log_level": 1,
     "ssl": {
@@ -62,15 +87,14 @@ cat > config.json <<EOF
         "fast_open_qlen": 20
     }
 }
-
 EOF
 
+# 安装trojan服务
 cat > /etc/systemd/system/trojan.service <<EOF
 [Unit]
 Description=trojan
 Documentation=man:trojan(1) https://trojan-gfw.github.io/trojan/config https://trojan-gfw.github.io/trojan/
 After=network.target network-online.target nss-lookup.target
-
 [Service]
 Type=simple
 StandardError=journal
@@ -80,10 +104,29 @@ ExecStart=/root/trojan/trojan -c /root/trojan/config.json
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=on-failure
 RestartSec=1s
-
 [Install]
 WantedBy=multi-user.target
 EOF
 
+systemctl start trojan
+systemctl enable trojan
 
-mkdir ssl && cd ssl && touch ca.crt ca.key
+# 下载Caddy
+wget https://github.com/caddyserver/caddy/releases/download/v2.2.1/caddy_2.2.1_linux_amd64.deb
+# 安装Caddy
+dpkg -i caddy_2.2.1_linux_amd64.deb && rm caddy_2.2.1_linux_amd64.deb
+
+
+read -p "请输入伪装网站(https://www.qb5.tw):" web2
+
+# 添加Caddy配置文件
+cd /etc/caddy/ && cat > Caddyfile <<EOF
+:80
+reverse_proxy ${web2} {
+    header_up Host {http.reverse_proxy.upstream.hostport}
+}
+EOF
+# 重启Caddy
+caddy stop && caddy start && cd ~
+
+systemctl status trojan
