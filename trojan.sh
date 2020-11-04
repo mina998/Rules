@@ -13,7 +13,9 @@ curl https://get.acme.sh | sh
 # 设置权限
 source ~/.bashrc
 
-read -p "${Blue}请输入域名(ss.demo.com)${Font}:" domain
+echo ${Blue}
+read -p "请输入域名(ss.demo.com):" domain
+echo ${Font}
 
 localh_ip=$(curl https://api-ipv4.ip.sb/ip)
 domain_ip=$(ping "${domain}" -c 1 | sed '1{s/[^(]*(//;s/).*//;q}')
